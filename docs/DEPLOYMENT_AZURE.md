@@ -97,7 +97,7 @@ az acr build \
 ### Reverse Proxy Image
 
 ```bash
-cd ../s3-reverse-proxy
+cd ../reverse-proxy
 
 az acr build \
   --registry $ACR_NAME \

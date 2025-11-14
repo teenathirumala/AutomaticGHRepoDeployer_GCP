@@ -21,7 +21,7 @@ All services have been successfully converted from AWS to Azure.
 -  Uploads to Azure Blob Storage containers
 -  Maintains trace ID and timing logging
 
-#### 3. Reverse Proxy (`s3-reverse-proxy/index.js`)
+#### 3. Reverse Proxy (`reverse-proxy/index.js`)
 -  Updated to use Azure Blob Storage URLs
 - Uses `https://STORAGE_ACCOUNT.blob.core.windows.net/CONTAINER/__outputs/PROJECT_ID/`
 -  Added health check endpoint
@@ -34,7 +34,7 @@ All services have been successfully converted from AWS to Azure.
 
 #### 5. Dockerfiles
 -  `api-server/Dockerfile`: Created for Container Apps
--  `s3-reverse-proxy/Dockerfile`: Created for Container Apps
+-  `reverse-proxy/Dockerfile`: Created for Container Apps
 -  `build-server/Dockerfile`: Already existed (works for Azure)
 
 #### 6. Documentation

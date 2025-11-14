@@ -30,7 +30,7 @@ This document lists all required and optional environment variables for AWS, GCP
 - `AWS_SECRET_ACCESS_KEY` - AWS secret access key
 - `S3_BUCKET` - S3 bucket name (default: `vercel-clone-miniproject2`)
 
-### Reverse Proxy (`s3-reverse-proxy/`)
+### Reverse Proxy (`reverse-proxy/`)
 
 **Required:**
 - `S3_BUCKET` - S3 bucket name
@@ -153,7 +153,7 @@ PREVIEW_URL_BASE=https://preview.example.com
 - `AZURE_BLOB_PREFIX` - Blob prefix (default: `__outputs`)
 - `AZURE_CACHE_CONTROL` - Cache control header (default: `public, max-age=60`)
 
-### Reverse Proxy (`s3-reverse-proxy/`)
+### Reverse Proxy (`reverse-proxy/`)
 
 **Required:**
 - `AZURE_STORAGE_ACCOUNT_NAME` - Storage account name
