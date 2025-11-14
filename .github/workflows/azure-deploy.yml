@@ -1,0 +1,74 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches:
+      - azure
+  workflow_dispatch:
+
+env:
+  AZURE_RESOURCE_GROUP: vercel-clone-rg
+  AZURE_LOCATION: eastus
+  ACR_NAME: vercelclone
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and push API server
+        run: |
+          cd api-server
+          az acr build \
+            --registry ${{ env.ACR_NAME }} \
+            --image api-server:${{ github.sha }} \
+            --image api-server:latest \
+            --file Dockerfile .
+
+      - name: Build and push reverse proxy
+        run: |
+          cd s3-reverse-proxy
+          az acr build \
+            --registry ${{ env.ACR_NAME }} \
+            --image reverse-proxy:${{ github.sha }} \
+            --image reverse-proxy:latest \
+            --file Dockerfile .
+
+      - name: Build and push builder
+        run: |
+          cd build-server
+          az acr build \
+            --registry ${{ env.ACR_NAME }} \
+            --image builder:${{ github.sha }} \
+            --image builder:latest \
+            --file Dockerfile .
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Container Apps
+        run: |
+          az containerapp update \
+            --name api-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/api-server:latest
+
+          az containerapp update \
+            --name reverse-proxy \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/reverse-proxy:latest
+

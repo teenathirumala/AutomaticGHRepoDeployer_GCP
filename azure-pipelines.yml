@@ -1,0 +1,93 @@
+# Azure DevOps Pipeline YAML
+# Use this for CI/CD in Azure DevOps
+
+trigger:
+  branches:
+    include:
+      - azure
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  resourceGroup: 'vercel-clone-rg'
+  location: 'eastus'
+  acrName: 'vercelclone'
+  containerAppEnv: 'vercel-clone-env'
+
+stages:
+  - stage: Build
+    displayName: 'Build Container Images'
+    jobs:
+      - job: BuildImages
+        displayName: 'Build and Push Images'
+        steps:
+          - task: Docker@2
+            displayName: 'Build API Server'
+            inputs:
+              containerRegistry: 'ACRConnection'
+              repository: 'api-server'
+              command: 'buildAndPush'
+              Dockerfile: 'api-server/Dockerfile'
+              tags: |
+                latest
+                $(Build.BuildId)
+
+          - task: Docker@2
+            displayName: 'Build Reverse Proxy'
+            inputs:
+              containerRegistry: 'ACRConnection'
+              repository: 'reverse-proxy'
+              command: 'buildAndPush'
+              Dockerfile: 's3-reverse-proxy/Dockerfile'
+              tags: |
+                latest
+                $(Build.BuildId)
+
+          - task: Docker@2
+            displayName: 'Build Builder Image'
+            inputs:
+              containerRegistry: 'ACRConnection'
+              repository: 'builder'
+              command: 'buildAndPush'
+              Dockerfile: 'build-server/Dockerfile'
+              tags: |
+                latest
+                $(Build.BuildId)
+
+  - stage: Deploy
+    displayName: 'Deploy to Container Apps'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - deployment: DeployContainerApps
+        displayName: 'Deploy Services'
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureCLI@2
+                  displayName: 'Update API Server'
+                  inputs:
+                    azureSubscription: 'AzureConnection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az containerapp update \
+                        --name api-server \
+                        --resource-group $(resourceGroup) \
+                        --image $(acrName).azurecr.io/api-server:$(Build.BuildId)
+
+                - task: AzureCLI@2
+                  displayName: 'Update Reverse Proxy'
+                  inputs:
+                    azureSubscription: 'AzureConnection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az containerapp update \
+                        --name reverse-proxy \
+                        --resource-group $(resourceGroup) \
+                        --image $(acrName).azurecr.io/reverse-proxy:$(Build.BuildId)
+

@@ -1,0 +1,78 @@
+# Azure Container Apps Configuration
+# This file can be used with `az containerapp create` or Azure Portal
+
+apiVersion: 2022-10-01
+kind: containerApp
+metadata:
+  name: api-server
+spec:
+  managedEnvironmentId: /subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.App/managedEnvironments/{env-name}
+  configuration:
+    ingress:
+      external: true
+      targetPort: 9000
+      allowInsecure: false
+    registries:
+      - server: {acr-name}.azurecr.io
+        identity: system
+  template:
+    containers:
+      - image: {acr-name}.azurecr.io/api-server:latest
+        name: api-server
+        env:
+          - name: PORT
+            value: "9000"
+          - name: SOCKET_PORT
+            value: "9002"
+          - name: AZURE_SUBSCRIPTION_ID
+            secretRef: azure-subscription-id
+          - name: AZURE_RESOURCE_GROUP
+            value: "{resource-group}"
+          - name: AZURE_LOCATION
+            value: "eastus"
+          - name: BUILDER_IMAGE
+            value: "{acr-name}.azurecr.io/builder:latest"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            secretRef: storage-account-name
+          - name: REDIS_URL
+            secretRef: redis-url
+        resources:
+          cpu: 1.0
+          memory: 2Gi
+    scale:
+      minReplicas: 0
+      maxReplicas: 10
+
+---
+apiVersion: 2022-10-01
+kind: containerApp
+metadata:
+  name: reverse-proxy
+spec:
+  managedEnvironmentId: /subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.App/managedEnvironments/{env-name}
+  configuration:
+    ingress:
+      external: true
+      targetPort: 8000
+      allowInsecure: false
+    registries:
+      - server: {acr-name}.azurecr.io
+        identity: system
+  template:
+    containers:
+      - image: {acr-name}.azurecr.io/reverse-proxy:latest
+        name: reverse-proxy
+        env:
+          - name: PORT
+            value: "8000"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            secretRef: storage-account-name
+          - name: AZURE_BLOB_CONTAINER_NAME
+            value: "build-outputs"
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+    scale:
+      minReplicas: 0
+      maxReplicas: 10
+
