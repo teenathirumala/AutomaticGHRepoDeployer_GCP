@@ -1,7 +1,18 @@
 #!/bin/bash
 
-export GIT_REPOSITORY__URL="$GIT_REPOSITORY__URL"
+set -euo pipefail
 
-git clone "$GIT_REPOSITORY__URL" /home/app/output
+if [[ -z "${GIT_REPOSITORY_URL:-}" ]]; then
+  echo "GIT_REPOSITORY_URL env var is required"
+  exit 1
+fi
+
+if [[ -z "${PROJECT_ID:-}" ]]; then
+  echo "PROJECT_ID env var is required"
+  exit 1
+fi
+
+echo "Cloning repository ${GIT_REPOSITORY_URL}"
+git clone "${GIT_REPOSITORY_URL}" /home/app/output
 
 exec node script.js
