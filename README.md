@@ -1,31 +1,31 @@
-#  Multi-Cloud Deployment
+# Vercel Clone - GCP Deployment
 
-A full-stack application for building and deploying static sites from Git repositories, with support for both AWS and Google Cloud Platform (GCP).
+A full-stack application for building and deploying static sites from Git repositories, deployed on Google Cloud Platform (GCP).
 
 ## Architecture
 
 This project consists of:
 
-- **API Server**: Handles project build requests and triggers builds via Cloud Build (GCP) or ECS (AWS)
+- **API Server**: Handles project build requests and triggers builds via Cloud Build
 - **Socket Server**: Streams real-time build logs to the frontend via WebSockets
-- **Build Server**: Containerized service that clones repositories, builds projects, and uploads artifacts
-- **Reverse Proxy**: Serves built static assets from Cloud Storage (GCP) or S3 (AWS)
+- **Build Server**: Containerized service that clones repositories, builds projects, and uploads artifacts to Cloud Storage
+- **Reverse Proxy**: Serves built static assets from Cloud Storage
 - **Frontend**: Next.js application for submitting builds and viewing logs
 
 ## Project Structure
 
 ```
 miniproject2/
-├── api-server/          # Express API server (Cloud Run / ECS)
-├── build-server/        # Build container (Cloud Build / ECS Task)
-├── s3-reverse-proxy/    # Reverse proxy for static assets (Cloud Run / EC2)
+├── api-server/          # Express API server (Cloud Run)
+├── build-server/        # Build container (Cloud Build)
+├── s3-reverse-proxy/    # Reverse proxy for static assets (Cloud Run)
 ├── frontend-nextjs/     # Next.js frontend application
 └── docs/                # Deployment documentation
 ```
 
 ## Features
 
-- ✅ Multi-cloud support (AWS & GCP)
+- ✅ GCP-native deployment (Cloud Run, Cloud Build, Cloud Storage)
 - ✅ Real-time build log streaming via WebSockets
 - ✅ Distributed tracing with trace IDs
 - ✅ Cloud-native observability (Cloud Logging, Cloud Trace)
@@ -86,7 +86,12 @@ See [docs/DEPLOYMENT_GCP.md](docs/DEPLOYMENT_GCP.md) for detailed step-by-step i
 
 ### AWS Deployment
 
-The codebase supports AWS deployment with ECS, S3, and EC2. Configuration is environment-based.
+**Note**: This codebase is currently configured for GCP only. For AWS deployment comparison, you would need a separate version using:
+- AWS ECS (instead of Cloud Build)
+- S3 (instead of Cloud Storage)
+- EC2/ALB (instead of Cloud Run)
+
+The original AWS version can be found in your git history or you can create a separate branch for AWS comparison.
 
 ## Environment Variables
 
