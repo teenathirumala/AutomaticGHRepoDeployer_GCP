@@ -38,12 +38,25 @@ gcloud services enable \
    gcloud artifacts repositories create vercel-clone \
      --repository-format=docker --location=us-central1
    ```
-2. Build & push images (repeat for each service):
+2. Build & push the **builder image** (used by Cloud Build to build user projects):
    ```
    export REGION=us-central1
    export PROJECT_ID=YOUR_PROJECT
    export REPO=vercel-clone
 
+   # Option A: Using cloudbuild.yaml (recommended)
+   cd build-server
+   gcloud builds submit . \
+     --config=cloudbuild.yaml \
+     --substitutions=_ARTIFACT_REGISTRY=${REGION}-docker.pkg.dev,_PROJECT_ID=${PROJECT_ID},_BUILDER_IMAGE_NAME=builder,_IMAGE_TAG=latest
+
+   # Option B: Direct docker build
+   docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/builder:latest .
+   docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/builder:latest
+   ```
+
+3. Build & push other service images:
+   ```
    # API / socket
    gcloud builds submit api-server \
      --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/api-server:latest
@@ -53,7 +66,7 @@ gcloud services enable \
      --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/build-server:latest
 
    # Reverse proxy
-   gcloud builds submit s3-reverse-proxy \
+   gcloud builds submit reverse-proxy \
      --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/reverse-proxy:latest
    ```
 
@@ -105,7 +118,40 @@ Environment variables required by Cloud Build step:
 
 ---
 
-### 6. Deploy Cloud Run Services
+### 6. Create Service Accounts
+
+Create service accounts for each service with appropriate permissions:
+
+```
+# API Server service account
+gcloud iam service-accounts create api-server \
+  --display-name="API Server Service Account"
+
+# Grant necessary roles
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+  --member="serviceAccount:api-server@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/cloudbuild.builds.editor"
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+  --member="serviceAccount:api-server@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/storage.objectViewer"
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+  --member="serviceAccount:api-server@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+
+# Reverse Proxy service account (minimal permissions)
+gcloud iam service-accounts create reverse-proxy \
+  --display-name="Reverse Proxy Service Account"
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+  --member="serviceAccount:reverse-proxy@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/storage.objectViewer"
+```
+
+---
+
+### 7. Deploy Cloud Run Services
 
 #### API / Socket service
 
@@ -120,7 +166,11 @@ BUILDER_IMAGE=${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/build-server:latest
 GCS_BUCKET=vercel-clone-previews,PREVIEW_URL_BASE=https://preview.example.com,\
 REDIS_URL=rediss://:PASSWORD@HOST:PORT \
   --service-account=api-server@${PROJECT_ID}.iam.gserviceaccount.com \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --min-instances=0 \
+  --max-instances=10 \
+  --cpu=1 \
+  --memory=512Mi
 ```
 
 Create a VPC connector if Memorystore is deployed in a VPC and attach it via `--vpc-connector`.
@@ -143,7 +193,7 @@ Map your preview domain to this Cloud Run service or place it behind the HTTPS L
 
 ---
 
-### 7. IAM & Secrets
+### 8. IAM & Secrets
 
 - Store sensitive values (Redis password, GitHub tokens) in Secret Manager:
   ```
@@ -154,7 +204,7 @@ Map your preview domain to this Cloud Run service or place it behind the HTTPS L
 
 ---
 
-### 8. Observability
+### 9. Observability
 
 - Cloud Logging automatically collects stdout/stderr. Ensure log lines contain `traceId` (already from code).
 - Enable Cloud Trace by exporting OTEL spans (optional). For now, search logs by `jsonPayload.traceId`.
@@ -166,7 +216,7 @@ Map your preview domain to this Cloud Run service or place it behind the HTTPS L
 
 ---
 
-### 9. End-to-End Test
+### 10. End-to-End Test
 
 1. Call the API endpoint (`/project`) with a Git repository URL.
 2. Watch Cloud Build job progress:
@@ -177,19 +227,7 @@ Map your preview domain to this Cloud Run service or place it behind the HTTPS L
 4. Hit the preview domain to confirm the reverse proxy renders the static site.
 5. Gather per-stage timings from Cloud Build logs, Cloud Run request logs, and Memorystore metrics.
 
----
 
-### 10. Terraform (Optional)
-
-Capture infrastructure in IaC:
-- Artifact Registry (`google_artifact_registry_repository`)
-- Cloud Run services (`google_cloud_run_service`)
-- Cloud Build triggers (`google_cloudbuild_trigger`)
-- Memorystore (`google_redis_instance`)
-- Cloud Storage bucket (`google_storage_bucket`)
-- IAM bindings (service accounts + roles)
-
----
 
 With these steps complete, the Vercel-style workflow runs entirely on GCP. Update your paper with measured timings per service (Cloud Build duration, Cloud Run latency, Memorystore command latency, Cloud Storage fetch time) sourced from the GCP monitoring stack.
 

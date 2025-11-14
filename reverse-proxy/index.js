@@ -9,6 +9,11 @@ const OUTPUT_PREFIX = process.env.GCS_OUTPUT_PREFIX || '__outputs'
 
 const proxy = httpProxy.createProxy()
 
+// Health check endpoint for Cloud Run
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', service: 'reverse-proxy' })
+})
+
 function resolveTarget(hostname) {
   const [subdomain] = hostname.split('.')
   const bucket = process.env.GCS_BUCKET

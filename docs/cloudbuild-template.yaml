@@ -1,0 +1,37 @@
+# Template/Reference: Cloud Build Configuration
+# This shows what the build configuration looks like when created dynamically
+# by the API server. You don't need this file - it's just for reference.
+
+# NOTE: The API server creates builds programmatically using the Cloud Build API.
+# This YAML is a reference showing what that configuration would look like.
+
+steps:
+  # Step 1: Run the builder container
+  - name: '${BUILDER_IMAGE}'  # e.g., us-central1-docker.pkg.dev/PROJECT_ID/builder:latest
+    entrypoint: 'node'
+    args: ['script.js']
+    env:
+      - 'GIT_REPOSITORY_URL=${_GIT_REPOSITORY_URL}'
+      - 'PROJECT_ID=${_PROJECT_ID}'
+      - 'GCS_BUCKET=${_GCS_BUCKET}'
+      - 'TRACE_ID=${_TRACE_ID}'
+      - 'REDIS_URL=${_REDIS_URL}'  # Optional
+      - 'GCS_OUTPUT_PREFIX=__outputs'
+
+# Substitutions (provided by API server):
+# _GIT_REPOSITORY_URL: The GitHub repo URL to clone
+# _PROJECT_ID: Unique project slug (e.g., "happy-blue-whale")
+# _GCS_BUCKET: Cloud Storage bucket name
+# _TRACE_ID: Distributed trace identifier
+# _REDIS_URL: Redis connection string (optional)
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  dynamicSubstitutions: true
+  # logsBucket: 'gs://your-logs-bucket'  # Optional: store build logs
+
+timeout: '900s'  # 15 minutes (default)
+queueTtl: '600s'  # 10 minutes (default)
+
+# This is equivalent to what api-server/index.js creates in buildPayload()
+

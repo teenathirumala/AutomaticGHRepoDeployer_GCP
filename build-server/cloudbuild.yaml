@@ -1,0 +1,37 @@
+# Cloud Build configuration for building the builder image
+# This builds the Docker image that will be used to build user projects
+
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_BUILDER_IMAGE_NAME}:${_IMAGE_TAG}'
+      - '-t'
+      - '${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_BUILDER_IMAGE_NAME}:latest'
+      - '.'
+
+  # Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_BUILDER_IMAGE_NAME}:${_IMAGE_TAG}'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_ARTIFACT_REGISTRY}/${_PROJECT_ID}/${_BUILDER_IMAGE_NAME}:latest'
+
+# Substitutions (set these when triggering the build)
+# _ARTIFACT_REGISTRY: e.g., us-central1-docker.pkg.dev
+# _PROJECT_ID: Your GCP project ID
+# _BUILDER_IMAGE_NAME: e.g., builder
+# _IMAGE_TAG: e.g., v1.0.0 or latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'  # Optional: Use more powerful machine for faster builds
+
+timeout: '1200s'  # 20 minutes
+

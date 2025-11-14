@@ -27,6 +27,11 @@ app.use(cors({
 
 app.use(express.json())
 
+// Health check endpoint for Cloud Run
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', service: 'api-server' })
+})
+
 const subscriber = REDIS_URL ? new Redis(REDIS_URL) : null
 const io = new Server({ cors: '*' })
 

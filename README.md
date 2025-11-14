@@ -18,7 +18,7 @@ This project consists of:
 miniproject2/
 ├── api-server/          # Express API server (Cloud Run)
 ├── build-server/        # Build container (Cloud Build)
-├── s3-reverse-proxy/    # Reverse proxy for static assets (Cloud Run)
+├── reverse-proxy/       # Reverse proxy for static assets (Cloud Run)
 ├── frontend-nextjs/     # Next.js frontend application
 └── docs/                # Deployment documentation
 ```
@@ -47,7 +47,7 @@ miniproject2/
    ```bash
    cd api-server && npm install
    cd ../build-server && npm install
-   cd ../s3-reverse-proxy && npm install
+   cd ../reverse-proxy && npm install
    cd ../frontend-nextjs && npm install
    ```
 
@@ -63,7 +63,7 @@ miniproject2/
    # Terminal 2: Socket Server (runs with API server)
    
    # Terminal 3: Reverse Proxy
-   cd s3-reverse-proxy && npm start
+   cd reverse-proxy && npm start
    
    # Terminal 4: Frontend
    cd frontend-nextjs && npm run dev
