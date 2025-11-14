@@ -1,8 +1,8 @@
-# Vercel Clone - Multi-Cloud Deployment
+# Comparative Study of Cloud Service Providers: Evaluating Deployment Strategies and Hosting Methodologies for Scalable Web Applications
 
 A full-stack application for building and deploying static sites from Git repositories, with implementations for both **AWS** and **Google Cloud Platform (GCP)**.
 
-## 📁 Repository Structure
+##  Repository Structure
 
 This repository contains **two separate implementations**:
 
@@ -19,7 +19,7 @@ git checkout main
 git checkout gcp
 ```
 
-## 🏗️ Architecture
+##  Architecture
 
 ### AWS Version (`main` branch)
 - **API Server**: Express server on EC2 that triggers ECS tasks
@@ -33,7 +33,7 @@ git checkout gcp
 - **Socket Server**: WebSocket server for real-time log streaming (embedded in API server)
 - **Reverse Proxy**: Cloud Run service that serves static assets from Cloud Storage
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### AWS Version
 
@@ -63,15 +63,15 @@ git checkout gcp
    cat docs/DEPLOYMENT_GCP.md
    ```
 
-## 📊 Comparison
+##  Comparison
 
 For detailed comparison between AWS and GCP implementations, see `COMPARISON.md`.
 
-## 🔐 Environment Variables
+##  Environment Variables
 
 See `ENVIRONMENT_VARIABLES.md` for required environment variables for each version.
 
-## 📝 Features
+##  Features
 
 - ✅ Multi-cloud support (AWS & GCP)
 - ✅ Real-time build log streaming via WebSockets
@@ -80,25 +80,15 @@ See `ENVIRONMENT_VARIABLES.md` for required environment variables for each versi
 - ✅ Environment-based configuration
 - ✅ Containerized build pipeline
 
-## 📚 Documentation
+##  Documentation
 
 - **AWS Deployment**: See code comments and environment variables
 - **GCP Deployment**: See `docs/DEPLOYMENT_GCP.md` (in `gcp` branch)
 - **Environment Variables**: See `ENVIRONMENT_VARIABLES.md`
 - **Comparison**: See `COMPARISON.md`
 
-## 🔬 For Research Paper
 
-This project is designed for comparing AWS vs GCP performance. Both implementations include:
-- Timing measurements at each service stage
-- Distributed tracing with trace IDs
-- Cloud-native observability integration
-
-## 📄 License
-
-ISC
-
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch
