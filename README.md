@@ -1,4 +1,4 @@
-# Multi-Cloud Deployment
+# Comparative Study of Cloud Service Providers: Evaluating Deployment Strategies and Hosting Methodologies for Scalable Web Applications
 
 A full-stack application for building and deploying static sites from Git repositories, with implementations for **AWS**, **Google Cloud Platform (GCP)**, and **Microsoft Azure**.
 
@@ -37,7 +37,7 @@ git checkout gcp
 git checkout azure
 ```
 
-## 🏗️ Architecture
+##  Architecture
 
 ### AWS Version (`main` branch)
 - **API Server**: Express server on EC2 that triggers ECS tasks
@@ -63,7 +63,7 @@ git checkout azure
 - **Storage**: Azure Blob Storage container for build artifacts
 - **Messaging**: Azure Cache for Redis
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### AWS Version (`main` branch)
 
@@ -121,7 +121,7 @@ git checkout azure
    - Configure Container Instances
    - Set up Blob Storage
 
-## 📊 Comparison
+##  Comparison
 
 For a detailed comparison between AWS, GCP, and Azure implementations covering:
 - Service mapping and architecture
@@ -133,14 +133,14 @@ For a detailed comparison between AWS, GCP, and Azure implementations covering:
 
 See `COMPARISON.md`.
 
-## 🔧 Environment Variables
+##  Environment Variables
 
 See `ENVIRONMENT_VARIABLES.md` for:
 - Required and optional environment variables for each cloud provider
 - Security best practices
 - Configuration examples
 
-## ✨ Features
+## Features
 
 - **Multi-cloud support**: AWS, GCP, and Azure implementations
 - **Real-time build logs**: WebSocket streaming for live build progress
@@ -151,7 +151,7 @@ See `ENVIRONMENT_VARIABLES.md` for:
 - **Auto-scaling**: Serverless/container-based services scale automatically
 - **Health checks**: Built-in health endpoints for all services
 
-## 📚 Documentation
+##  Documentation
 
 - **AWS Deployment**: See code comments and `ENVIRONMENT_VARIABLES.md`
 - **GCP Deployment**: See `docs/DEPLOYMENT_GCP.md` (in `gcp` branch)
@@ -160,9 +160,7 @@ See `ENVIRONMENT_VARIABLES.md` for:
 - **Environment Variables**: See `ENVIRONMENT_VARIABLES.md`
 - **Comparison**: See `COMPARISON.md`
 
-## 📈 For Research Paper
-
-This project is designed for comparing AWS vs GCP vs Azure performance and architecture. All implementations include:
+ Comparing AWS vs GCP vs Azure performance and architecture. All implementations include:
 
 - **Timing measurements**: Timestamps at each service stage (API request, build start, build completion, upload time)
 - **Distributed tracing**: Trace IDs propagated across all services for end-to-end tracking
@@ -177,20 +175,17 @@ This project is designed for comparing AWS vs GCP vs Azure performance and archi
 - Storage upload time
 - End-to-end request latency
 - Cost per build
-- Scalability characteristics
 
-## 🔐 Security
+
+##  Security
 
 - All credentials via environment variables (no hardcoded secrets)
 - Cloud-native authentication (IAM roles, Service Accounts, Managed Identity)
-- Support for secret management services (AWS Secrets Manager, GCP Secret Manager, Azure Key Vault)
 - Health check endpoints for monitoring
 
-## 📝 License
 
-ISC
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -199,9 +194,8 @@ ISC
 
 ---
 
-## ⚠️ Important Notes
+##  Important Notes
 
 - **Branch Selection**: Make sure you're on the correct branch (`main` for AWS, `gcp` for GCP, `azure` for Azure) before deploying!
 - **Environment Variables**: Each cloud provider requires different environment variables. See `ENVIRONMENT_VARIABLES.md` for details.
 - **Docker Images**: Build and push Docker images to the respective container registries (ECR, Artifact Registry, ACR) before deploying.
-- **Service Names**: The `reverse-proxy` folder is named generically and works with S3 (AWS), Cloud Storage (GCP), and Blob Storage (Azure) depending on the branch.
