@@ -1,150 +1,124 @@
-const express = require('express')
-const { v4: uuidv4 } = require('uuid')
-const { generateSlug } = require('random-word-slugs')
+console.time("startup_time_api");
+
+const express= require('express')
+const {generateSlug}=require('random-word-slugs')
+const {ECSClient,RunTaskCommand}= require('@aws-sdk/client-ecs')
 const { Server } = require('socket.io')
 const Redis = require('ioredis')
-const cors = require('cors')
-const { CloudBuildClient } = require('@google-cloud/cloudbuild')
+const cors = require('cors');
 
-const app = express()
-
-const PORT = process.env.PORT || 9000
-const SOCKET_PORT = process.env.SOCKET_PORT || 9002
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:3000'
-const REDIS_URL = process.env.REDIS_URL
-
-if (!REDIS_URL) {
-  console.warn(
-    '[api-server] REDIS_URL is not set. Log streaming will be disabled until a Redis endpoint is configured.'
-  )
-}
+const app=express()
+const PORT=9000
 
 app.use(cors({
-  origin: FRONTEND_ORIGIN,
+  origin: 'http://localhost:3000',   // your Next.js frontend
   methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type', 'X-Trace-Id']
-}))
+  allowedHeaders: ['Content-Type'],
+}));
 
-app.use(express.json())
 
-const subscriber = REDIS_URL ? new Redis(REDIS_URL) : null
+const REDIS_URL = process.env.REDIS_URL || 'rediss://default:PASSWORD@HOST:PORT'
+const subscriber = new Redis(REDIS_URL)
+
 const io = new Server({ cors: '*' })
 
 io.on('connection', socket => {
-  socket.on('subscribe', channel => {
-    socket.join(channel)
-    socket.emit('message', `Joined ${channel}`)
-  })
+    socket.on('subscribe', channel => {
+        const start = Date.now();
+        socket.join(channel)
+        socket.emit('message', `Joined ${channel}`);
+        console.log(`[Socket] Subscribed to ${channel} in ${Date.now() - start}ms`);
+    })
 })
 
-io.listen(SOCKET_PORT, () => console.log(`Socket Server listening on ${SOCKET_PORT}`))
-
-const cloudBuild = new CloudBuildClient()
-
-function buildPayload({ gitURL, projectSlug, traceId }) {
-  const projectId = process.env.GCP_PROJECT_ID
-  const location = process.env.CLOUD_BUILD_LOCATION || 'global'
-  const builderImage = process.env.BUILDER_IMAGE
-
-  if (!projectId) {
-    throw new Error('GCP_PROJECT_ID must be set for Cloud Build invocation.')
-  }
-
-  if (!builderImage) {
-    throw new Error('BUILDER_IMAGE must point to the container image that runs the build-server.')
-  }
-
-  const bucketName = process.env.GCS_BUCKET
-  if (!bucketName) {
-    throw new Error('GCS_BUCKET must be provided to publish build outputs.')
-  }
-
-  const redisUrlEnv = REDIS_URL ? [`REDIS_URL=${REDIS_URL}`] : []
-
-  return {
-    projectId,
-    location,
-    build: {
-      timeout: { seconds: parseInt(process.env.BUILD_TIMEOUT_SECONDS || '900', 10) },
-      queueTtl: { seconds: parseInt(process.env.BUILD_QUEUE_TTL_SECONDS || '600', 10) },
-      options: {
-        dynamicSubstitutions: true,
-        logging: process.env.BUILD_LOGGING || 'CLOUD_LOGGING_ONLY'
-      },
-      logsBucket: process.env.BUILD_LOGS_BUCKET || undefined,
-      steps: [
-        {
-          name: builderImage,
-          env: [
-            `GIT_REPOSITORY_URL=${gitURL}`,
-            `PROJECT_ID=${projectSlug}`,
-            `GCS_BUCKET=${bucketName}`,
-            `TRACE_ID=${traceId}`,
-            ...redisUrlEnv
-          ],
-          entrypoint: process.env.BUILDER_ENTRYPOINT || 'node',
-          args: process.env.BUILDER_ARGS ? JSON.parse(process.env.BUILDER_ARGS) : ['script.js']
-        }
-      ]
-    }
-  }
+console.time("startup_time_socket");
+io.listen(9002, () => {
+    console.timeEnd("startup_time_socket");
+    console.log('Socket Server 9002')
 }
+)
 
-app.post('/project', async (req, res) => {
-  const { gitURL, slug } = req.body
+const AWS_REGION = process.env.AWS_REGION || 'ap-south-1'
+const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID
+const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY
 
-  if (!gitURL) {
-    return res.status(400).json({ status: 'error', message: 'gitURL is required' })
-  }
-
-  const projectSlug = slug || generateSlug()
-  const traceId = req.headers['x-trace-id'] || uuidv4()
-
-  try {
-    console.log('[api-server] Queueing build', { projectSlug, traceId, gitURL })
-    const payload = buildPayload({ gitURL, projectSlug, traceId })
-
-    const [operation] = await cloudBuild.createBuild({
-      projectId: payload.projectId,
-      build: payload.build,
-      location: payload.location
+const ecsClient = new ECSClient({
+    region: AWS_REGION,
+    ...(AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY && {
+        credentials: {
+            accessKeyId: AWS_ACCESS_KEY_ID,
+            secretAccessKey: AWS_SECRET_ACCESS_KEY
+        }
     })
+})
+const config = {
+    CLUSTER: process.env.AWS_ECS_CLUSTER || 'arn:aws:ecs:ap-south-1:ACCOUNT:cluster/CLUSTER_NAME',
+    TASK: process.env.AWS_ECS_TASK_DEFINITION || 'arn:aws:ecs:ap-south-1:ACCOUNT:task-definition/TASK_NAME'
+}
+app.use(express.json())
 
-    const buildName = operation.name
+//time
+// Add this before defining routes
+app.use((req, res, next) => {
+  const start = Date.now();
 
-    return res.json({
-      status: 'queued',
-      data: {
-        projectSlug,
-        buildName,
-        traceId,
-        url: `${process.env.PREVIEW_URL_BASE || 'https://preview.example.com'}/${projectSlug}`
-      }
-    })
-  } catch (error) {
-    console.error('[api-server] Failed to queue build', error)
-    return res.status(500).json({ status: 'error', message: error.message })
-  }
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    console.log(`[API] ${req.method} ${req.url} - ${duration}ms`);
+  });
+
+  next();
+});
+//
+
+app.post('/project',async(req,res)=>{
+    const { gitURL,slug }=req.body
+    const projectSlug= slug ? slug :generateSlug()
+
+// spin the container
+const command= new RunTaskCommand({
+    cluster:config.CLUSTER,
+    taskDefinition:config.TASK,
+    launchType:'FARGATE',
+    count: 1,
+    networkConfiguration:{
+        awsvpcConfiguration:{
+            assignPublicIp: 'ENABLED',
+            subnets: ['subnet-05ed7c05eda7958c4','subnet-0da853b66b337af08','subnet-01436c679be2da3ea'],
+            securityGroups: ['sg-0e85763e9f2df880e']
+        }
+    },
+    overrides: {
+            containerOverrides: [
+                {
+                    name: 'builder-image',
+                    environment: [
+                        { name: 'GIT_REPOSITORY__URL', value: gitURL },
+                        { name: 'PROJECT_ID', value: projectSlug }
+                    ]
+                }
+            ]
+    }
+})
+await ecsClient.send(command);
+
+    return res.json({ status: 'queued', data: { projectSlug, url: `http://${projectSlug}.localhost:8000` } })
+
 })
 
 async function initRedisSubscribe() {
-  if (!subscriber) return
-
-  console.log('[api-server] Subscribing to build logs...')
-  await subscriber.psubscribe('logs:*')
-  subscriber.on('pmessage', (pattern, channel, message) => {
-    const parsed = (() => {
-      try {
-        return JSON.parse(message)
-      } catch {
-        return { log: message }
-      }
-    })()
-
-    io.to(channel).emit('message', JSON.stringify(parsed))
-  })
+    console.log('Subscribed to logs....')
+    subscriber.psubscribe('logs:*')
+    subscriber.on('pmessage', (pattern, channel, message) => {
+        io.to(channel).emit('message', message)
+    })
 }
 
 initRedisSubscribe()
 
-app.listen(PORT, () => console.log(`API Server listening on ${PORT}`))
+app.listen(PORT,()=>
+    {
+        console.timeEnd("startup_time_api");
+        console.log(`API Server Running... ${PORT}`)
+    }
+)
