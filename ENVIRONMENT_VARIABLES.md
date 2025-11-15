@@ -46,15 +46,6 @@ This document lists all required and optional environment variables for GCP impl
 
 ---
 
-##  Security Best Practices
-
-1. **Never commit secrets to git** - Use environment variables or secret managers
-2. **Use Secret Manager**:
-   - AWS: AWS Secrets Manager or Parameter Store
-   - GCP: Secret Manager
-3. **Use IAM roles** when possible instead of access keys
-4. **Rotate credentials** regularly
-
 ##  Example `.env` Files
 
 ### GCP API Server `.env`
@@ -66,16 +57,6 @@ REDIS_URL=rediss://default:PASSWORD@HOST:PORT
 PREVIEW_URL_BASE=https://preview.example.com
 ```
 
----
-
-### GCP API Server `.env`
-```bash
-GCP_PROJECT_ID=your-project-id
-BUILDER_IMAGE=us-central1-docker.pkg.dev/PROJECT/repo/builder:latest
-GCS_BUCKET=your-bucket-name
-REDIS_URL=rediss://default:PASSWORD@HOST:PORT
-PREVIEW_URL_BASE=https://preview.example.com
-```
 
 
 
