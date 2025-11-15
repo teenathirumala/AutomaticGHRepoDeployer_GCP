@@ -1,38 +1,42 @@
-# AWS vs GCP Implementation Comparison
+# AWS vs GCP vs Azure Implementation Comparison
 
-This document compares the AWS and GCP implementations of the Vercel Clone project.
+This document compares the AWS, GCP, and Azure implementations of the Vercel Clone project.
 
-## 📊 Architecture Comparison
+##  Architecture Comparison
 
-| Component | AWS (`main` branch) | GCP (`gcp` branch) |
-|-----------|---------------------|---------------------|
-| **API Server** | EC2 Instance | Cloud Run Service |
-| **Build Service** | ECS Fargate Task | Cloud Build |
-| **Storage** | S3 Bucket | Cloud Storage Bucket |
-| **Reverse Proxy** | EC2 Instance | Cloud Run Service |
-| **Messaging** | Redis (Aiven/Valkey) | Memorystore (Redis) |
-| **Container Registry** | ECR | Artifact Registry |
-| **Orchestration** | ECS | Cloud Build |
+| Component | AWS (`main` branch) | GCP (`gcp` branch) | Azure (`azure` branch) |
+|-----------|---------------------|---------------------|------------------------|
+| **API Server** | EC2 Instance | Cloud Run Service | Container Apps |
+| **Build Service** | ECS Fargate Task | Cloud Build | Container Instances |
+| **Storage** | S3 Bucket | Cloud Storage Bucket | Blob Storage |
+| **Reverse Proxy** | EC2 Instance | Cloud Run Service | Container Apps |
+| **Messaging** | Redis (Aiven/Valkey) | Memorystore (Redis) | Azure Cache for Redis |
+| **Container Registry** | ECR | Artifact Registry | Azure Container Registry |
+| **Orchestration** | ECS | Cloud Build | Container Instances API |
 
-## 🔧 Service Mapping
+##  Service Mapping
 
 ### API Server
 - **AWS**: Runs on EC2, manually managed, always-on
 - **GCP**: Runs on Cloud Run, serverless, auto-scales to zero
+- **Azure**: Runs on Container Apps, serverless, auto-scales to zero
 
 ### Build Service
 - **AWS**: ECS Fargate task, triggered via API, runs in container
 - **GCP**: Cloud Build job, triggered via API, runs in container
+- **Azure**: Container Instance, triggered via API, runs in container
 
 ### Storage
 - **AWS**: S3 bucket with public read access
 - **GCP**: Cloud Storage bucket with public read access
+- **Azure**: Blob Storage container with public read access
 
 ### Reverse Proxy
 - **AWS**: EC2 instance running Express server
 - **GCP**: Cloud Run service running Express server
+- **Azure**: Container Apps service running Express server
 
-## 💰 Cost Comparison
+##  Cost Comparison
 
 ### AWS
 - **EC2**: Pay for running instances (even when idle)
@@ -46,24 +50,33 @@ This document compares the AWS and GCP implementations of the Vercel Clone proje
 - **Cloud Storage**: Pay for storage and requests
 - **Auto-scaling to zero**: No cost when idle
 
-**Note**: Actual costs depend on usage patterns. GCP may be cheaper for low-traffic scenarios due to auto-scaling to zero.
+### Azure
+- **Container Apps**: Pay only for request processing time
+- **Container Instances**: Pay per second while running
+- **Blob Storage**: Pay for storage and requests
+- **Auto-scaling to zero**: No cost when idle
 
-## ⚡ Performance Comparison
+**Note**: Actual costs depend on usage patterns. GCP and Azure may be cheaper for low-traffic scenarios due to auto-scaling to zero.
+
+##  Performance Comparison
 
 ### Build Time
 - **AWS**: Depends on ECS task startup + build time
 - **GCP**: Depends on Cloud Build worker startup + build time
+- **Azure**: Depends on Container Instance startup + build time
 
 ### API Response Time
 - **AWS**: Consistent (always-on EC2)
 - **GCP**: Cold start on first request, then fast (Cloud Run)
+- **Azure**: Cold start on first request, then fast (Container Apps)
 
 ### Storage Access
 - **AWS**: S3 direct access
 - **GCP**: Cloud Storage direct access
-- **Both**: Similar performance for static assets
+- **Azure**: Blob Storage direct access
+- **All**: Similar performance for static assets
 
-## 🛠️ Deployment Complexity
+##  Deployment Complexity
 
 ### AWS
 - ✅ More control over infrastructure
@@ -77,7 +90,14 @@ This document compares the AWS and GCP implementations of the Vercel Clone proje
 - ✅ Pay-per-use pricing
 - ❌ Less control over underlying infrastructure
 
-## 📦 Container Requirements
+### Azure
+- ✅ Simpler deployment (Container Apps handles infrastructure)
+- ✅ Auto-scaling built-in
+- ✅ Pay-per-use pricing
+- ✅ Managed Identity for authentication
+- ❌ Less control over underlying infrastructure
+
+##  Container Requirements
 
 ### AWS
 - **Build Server**: 1 Dockerfile (for ECS task)
@@ -87,7 +107,11 @@ This document compares the AWS and GCP implementations of the Vercel Clone proje
 - **All Services**: 3 Dockerfiles required (Cloud Run needs containers)
 - **Build Server**: Additional `cloudbuild.yaml` for building the builder image
 
-## 🔐 Security
+### Azure
+- **All Services**: 3 Dockerfiles required (Container Apps needs containers)
+- **Build Server**: Uses ACR build or Azure DevOps Pipelines
+
+##  Security
 
 ### AWS
 - IAM roles and policies
@@ -99,9 +123,14 @@ This document compares the AWS and GCP implementations of the Vercel Clone proje
 - VPC firewall rules
 - Secrets in Secret Manager
 
-**Both**: Support environment variables and secret management.
+### Azure
+- Managed Identity (recommended) or Service Principals
+- Network security groups
+- Secrets in Key Vault
 
-## 📈 Scalability
+**All**: Support environment variables and secret management.
+
+## Scalability
 
 ### AWS
 - Manual scaling configuration
@@ -113,7 +142,12 @@ This document compares the AWS and GCP implementations of the Vercel Clone proje
 - Scales to zero when idle
 - Built-in load balancing
 
-## 🎯 Use Cases
+### Azure
+- Automatic scaling (Container Apps)
+- Scales to zero when idle
+- Built-in load balancing
+
+## Use Cases
 
 ### Choose AWS if:
 - You need fine-grained control over infrastructure
@@ -127,58 +161,70 @@ This document compares the AWS and GCP implementations of the Vercel Clone proje
 - You want simpler deployment
 - You need cost optimization for variable traffic
 
-## 📝 Code Differences
+### Choose Azure if:
+- You want serverless, auto-scaling services
+- You have existing Azure infrastructure
+- You prefer Microsoft ecosystem integration
+- You need Managed Identity for authentication
+- You want pay-per-use pricing
+
+##  Code Differences
 
 ### Key Differences:
 
 1. **SDK Usage**:
    - AWS: `@aws-sdk/client-ecs`, `@aws-sdk/client-s3`
    - GCP: `@google-cloud/cloudbuild`, `@google-cloud/storage`
+   - Azure: `@azure/arm-containerinstance`, `@azure/storage-blob`, `@azure/identity`
 
 2. **Build Triggering**:
    - AWS: `ECSClient.send(RunTaskCommand)`
    - GCP: `CloudBuildClient.createBuild()`
+   - Azure: `ContainerInstanceManagementClient.containerGroups.beginCreateOrUpdateAndWait()`
 
 3. **Storage Upload**:
    - AWS: `S3Client.send(PutObjectCommand)`
    - GCP: `Storage.bucket().upload()`
+   - Azure: `BlobServiceClient.getContainerClient().getBlockBlobClient().uploadFile()`
 
-4. **Configuration**:
-   - AWS: Hardcoded ARNs and regions (now using env vars)
+4. **Authentication**:
+   - AWS: Access keys or IAM roles
+   - GCP: Service account keys or Workload Identity
+   - Azure: Managed Identity (DefaultAzureCredential) or Service Principal
+
+5. **Configuration**:
+   - AWS: ARNs and regions (using env vars)
    - GCP: Project-based configuration
+   - Azure: Subscription and resource group based
 
-## 🔬 For Your Research Paper
+##  For Your Research Paper
 
 ### Metrics to Compare:
 
 1. **Build Time**:
    - Time from API request to build completion
-   - Measure: ECS task duration vs Cloud Build duration
+   - Measure: ECS task duration vs Cloud Build duration vs Container Instance duration
 
 2. **API Latency**:
    - Time from request to response
-   - Measure: EC2 response time vs Cloud Run (including cold starts)
+   - Measure: EC2 response time vs Cloud Run vs Container Apps (including cold starts)
 
 3. **Storage Upload Time**:
    - Time to upload build artifacts
-   - Measure: S3 upload vs Cloud Storage upload
+   - Measure: S3 upload vs Cloud Storage upload vs Blob Storage upload
 
 4. **Cost per Build**:
    - Total cost for a single build
-   - Measure: ECS task cost vs Cloud Build cost
+   - Measure: ECS task cost vs Cloud Build cost vs Container Instance cost
 
-5. **Scalability**:
-   - Concurrent build handling
-   - Measure: ECS task limits vs Cloud Build concurrency
 
 ### Measurement Approach:
 
-Both implementations include:
-- ✅ Trace IDs for distributed tracing
-- ✅ Timestamp logging at each stage
-- ✅ Cloud-native observability integration
 
-Use CloudWatch (AWS) and Cloud Monitoring (GCP) to gather metrics.
+Use:
+- **AWS**: CloudWatch for metrics
+- **GCP**: Cloud Monitoring for metrics
+- **Azure**: Azure Monitor for metrics
 
 ---
 
@@ -186,5 +232,6 @@ Use CloudWatch (AWS) and Cloud Monitoring (GCP) to gather metrics.
 ```bash
 git checkout main    # AWS version
 git checkout gcp     # GCP version
+git checkout azure   # Azure version
 ```
 
