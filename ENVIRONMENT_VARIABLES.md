@@ -1,47 +1,8 @@
 # Environment Variables
 
-This document lists all required and optional environment variables for both AWS and GCP implementations.
+This document lists all required and optional environment variables for GCP implementation.
 
-## 🔵 AWS Version (`main` branch)
-
-### API Server (`api-server/`)
-
-**Required:**
-- `REDIS_URL` - Redis connection string (e.g., `rediss://default:PASSWORD@HOST:PORT`)
-- `AWS_REGION` - AWS region (default: `ap-south-1`)
-- `AWS_ACCESS_KEY_ID` - AWS access key ID
-- `AWS_SECRET_ACCESS_KEY` - AWS secret access key
-- `AWS_ECS_CLUSTER` - ECS cluster ARN (e.g., `arn:aws:ecs:region:account:cluster/name`)
-- `AWS_ECS_TASK_DEFINITION` - ECS task definition ARN
-
-**Optional:**
-- `PORT` - API server port (default: `9000`)
-- `SOCKET_PORT` - WebSocket server port (default: `9002`)
-- `FRONTEND_ORIGIN` - CORS origin (default: `http://localhost:3000`)
-
-### Build Server (`build-server/`)
-
-**Required:**
-- `PROJECT_ID` - Unique project identifier (set by ECS task)
-- `GIT_REPOSITORY__URL` - Git repository URL to clone (set by ECS task)
-- `REDIS_URL` - Redis connection string
-- `AWS_REGION` - AWS region
-- `AWS_ACCESS_KEY_ID` - AWS access key ID
-- `AWS_SECRET_ACCESS_KEY` - AWS secret access key
-- `S3_BUCKET` - S3 bucket name (default: `vercel-clone-miniproject2`)
-
-### Reverse Proxy (`s3-reverse-proxy/`)
-
-**Required:**
-- `S3_BUCKET` - S3 bucket name
-- `S3_REGION` - S3 region
-
-**Optional:**
-- `PORT` - Server port (default: `8000`)
-
----
-
-## 🟢 GCP Version (`gcp` branch)
+##  GCP Version (`gcp` branch)
 
 ### API Server (`api-server/`)
 
@@ -85,7 +46,7 @@ This document lists all required and optional environment variables for both AWS
 
 ---
 
-## 🔒 Security Best Practices
+##  Security Best Practices
 
 1. **Never commit secrets to git** - Use environment variables or secret managers
 2. **Use Secret Manager**:
@@ -94,19 +55,7 @@ This document lists all required and optional environment variables for both AWS
 3. **Use IAM roles** when possible instead of access keys
 4. **Rotate credentials** regularly
 
-## 📝 Example `.env` Files
-
-### AWS API Server `.env`
-```bash
-REDIS_URL=rediss://default:PASSWORD@HOST:PORT
-AWS_REGION=ap-south-1
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_ECS_CLUSTER=arn:aws:ecs:ap-south-1:ACCOUNT:cluster/CLUSTER_NAME
-AWS_ECS_TASK_DEFINITION=arn:aws:ecs:ap-south-1:ACCOUNT:task-definition/TASK_NAME
-PORT=9000
-SOCKET_PORT=9002
-```
+##  Example `.env` Files
 
 ### GCP API Server `.env`
 ```bash
@@ -119,5 +68,15 @@ PREVIEW_URL_BASE=https://preview.example.com
 
 ---
 
-**Note**: These are example values. Replace with your actual credentials and configuration.
+### GCP API Server `.env`
+```bash
+GCP_PROJECT_ID=your-project-id
+BUILDER_IMAGE=us-central1-docker.pkg.dev/PROJECT/repo/builder:latest
+GCS_BUCKET=your-bucket-name
+REDIS_URL=rediss://default:PASSWORD@HOST:PORT
+PREVIEW_URL_BASE=https://preview.example.com
+```
+
+
+
 
